@@ -1,6 +1,8 @@
+// 기본적으로 싱글 스레드인 노트가 cpu 코어를 모두 사용할 수 있게 해주는 모듈
+// 단점: 메모리 세션등 공유 못함
 const cluster = require('cluster');
 const http = require('http');
-const numCPUs = require('os').cpus().length;
+const numCPUs = require('os').cpus().length; //cpu 개수
 
 if (cluster.isMaster) {
   console.log(`마스터 프로세스 아이디: ${process.pid}`);
@@ -12,7 +14,7 @@ if (cluster.isMaster) {
   cluster.on('exit', (worker, code, signal) => {
     console.log(`${worker.process.pid}번 워커가 종료되었습니다.`);
     console.log('code', code, 'signal', signal);
-    cluster.fork();
+    cluster.fork(); // 새로운 워커 프로세스 생성, 서버가 이상이 생겨서 꺼지도라도 다른 서커를 바로 켤 수 있음
   });
 } else {
   // 워커들이 포트에서 대기
@@ -21,9 +23,9 @@ if (cluster.isMaster) {
     res.write('<h1>Hello Node!</h1>');
     res.end('<p>Hello Cluster!</p>');
     setTimeout(() => { // 워커 존재를 확인하기 위해 1초마다 강제 종료
-      process.exit(1);
+      process.exit(1);// 프로세스 강제 종료
     }, 1000);
-  }).listen(8086);
+  }).listen(8086); //모든 서버를 하나의 포트에 넣을 수 있음
 
   console.log(`${process.pid}번 워커 실행`);
 }

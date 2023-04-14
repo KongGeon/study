@@ -53,7 +53,7 @@ document.getElementById('form').addEventListener('submit', async (e) => {
     return alert('이름을 입력하세요');
   }
   try {
-    await axios.post('/user', { name });
+    await axios.post('/user', { name }); //등록에 내용을 적고 등록 버튼을 누르면 post방식으로 /user로 데이터를 넘김
     getUser();
   } catch (err) {
     console.error(err);

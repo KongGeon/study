@@ -1,4 +1,4 @@
-const http2 = require('http2');
+const http2 = require('http2'); //http 버전 2, 암호화까지 포함되었음, 더 빨라짐, 작은 이미지 여러개 보낼때에는 훨신 좋음. 한번에 여러개 보내기 가능
 const fs = require('fs');
 
 http2.createSecureServer({
