@@ -1,11 +1,22 @@
 const express = require("express");
 const path = require("path");
+const morgan = require("morgan");
+const cookieParser = require("cookie-parser");
 
 const app = express(); //express에서 app을 하나 가져옴
 app.set("port", process.env.PORT || 3000); //app.set('@@@') : @@@ 속성을 전역변수로 넣음
-
 //process.env.PORT : 설정된 포트 번호
 //터미널에서 SET PORT=80 이런식으로 포트를 변경할 수 있지만 그렇게 하면 다른 프로젝트의 포트도 고정되므로 지양해야함
+
+app.use(morgan("dev")); //요청과 응답을 기록하는 라우터
+app.use(morgan("combined")); //개발시에는 dev 실제에는 combined
+
+// 쿠키
+app.use(cookieParser()); //쿠키 전달해줌
+
+// bodtparser가 express안으로 들어왔음
+app.use(express.json()); //얘를 넣어두면 알아서 데이터를 파싱해줌 : json형식
+app.use(express.urlencoded({extended: true})); //얘를 넣어두면 알아서 데이터를 파싱해줌 : form 형식, 이미지 형식은 제외
 
 app.use((req, res, next) => {
   //모든 곳에서 실행하려면 이렇게
@@ -13,10 +24,7 @@ app.use((req, res, next) => {
   next(); // 다음으로 함수 전달
 }),
   (req, res, next) => {
-    //이런 식으로 이어서 진행도 가능
-    next("router"); // next 안에 인수가 'router' 면 아래 동일 아우터의 다른 미들웨어인 아래 트라이채키문이 실행되지 않고 다음 라우터로 이동
-  },
-  (req, res, next) => {
+    // 이런식으로 연결도 가능
     try {
       throw new Error("에러가 났어요"); //에러 만드는 코드
     } catch (error) {
@@ -31,6 +39,21 @@ app.use("about", (req, res, next) => {
 });
 
 app.get("/", (req, res) => {
+  // 쿠키
+  req.cookies; //{mycookie:'test'} 이런식으로 쿠키 전달 cookieParser
+  req.signedCookies; //암호화된(서명) 쿠키
+  res.cookies("name", encodeURIComponent(name), {
+    //setcookie와 같음
+    expires: new Date(),
+    httpOnly: true,
+    path: "/",
+  });
+  res.clearCookie("name", encodeURIComponent(name), {
+    //쿠키 삭제
+    httpOnly: true,
+    path: "/",
+  });
+
   // res.send('Hello, Express');
   res.sendFile(path.join(__dirname, "/index.html"));
   //sendFile 알아서 fs모듈을 사용해서 Html을 부름
@@ -38,12 +61,15 @@ app.get("/", (req, res) => {
 
   res.send("안녕"); //위에 샌드파일 했는데
   res.json({hello: "hi"}); // 한 라이터에서 이런식으로 샌드나 제이슨을 사용해서 데이터를 전달하려고 하면 에러가 뜸
-});
-
-app.listen(app.get("port"), () => {
-  //app.get('@@@') : @@@ 속성을 가져옴
-  console.log(app.get("port"), "번 포트에서 대기 중,");
-});
+}),
+  (req, res, next) => {
+    //이런 식으로 이어서 진행도 가능
+    next("router"); // next 안에 인수가 'router' 면 아래 동일 아우터의 다른 미들웨어인 아래 미들웨어가 실행되지 않고 다음 라우터로 이동
+  },
+  app.listen(app.get("port"), () => {
+    //app.get('@@@') : @@@ 속성을 가져옴
+    console.log(app.get("port"), "번 포트에서 대기 중,");
+  });
 
 app.listen("/java", () => {
   // '/java' 일 경우 노출
