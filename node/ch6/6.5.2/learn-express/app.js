@@ -5,6 +5,8 @@ const session = require('express-session');
 const dotenv = require('dotenv');
 const path = require('path');
 const nunjucks = require('nunjucks');
+// 넌적스 템플릿 엔진
+// html이 익숙하면 이게 더 낫겠다.
 
 dotenv.config();
 const indexRouter = require('./routes');
@@ -12,6 +14,8 @@ const userRouter = require('./routes/user');
 
 const app = express();
 app.set('port', process.env.PORT || 3000);
+
+// 넌적스 템플릿 엔진 시작
 app.set('view engine', 'html');
 nunjucks.configure('views', {
   express: app,

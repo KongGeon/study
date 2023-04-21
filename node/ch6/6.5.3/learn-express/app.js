@@ -49,6 +49,7 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500);
   res.render('error');
 });
+//배포중이 아니면 에러 메시지가 뜨고 실제 배포된 상태면 에러메시지는 뜨지 않는다
 
 app.listen(app.get('port'), () => {
   console.log(app.get('port'), '번 포트에서 대기 중');

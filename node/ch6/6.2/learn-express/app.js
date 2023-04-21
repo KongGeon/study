@@ -1,11 +1,19 @@
 const express = require("express");
+const dotenv = require("dotenv");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
-const dotenv = require("dotenv");
 const path = require("path");
 
-dotenv.config(); // dotenv가 .env를 읽어서 process.env 객체에 대입, 처음 한번만 하면됨
+dotenv.config();
+// dotenv가 .env를 읽어서 process.env 객체에 대입, 처음 한번만 하면됨
+// .env 파일을 만들어 주고 키 값 형식으로 만들어준다. 세미클론은 적지 않는다.
+// *** 절대 git에 올리면 안됨 ***
+// 최상단에 둬야 함. 예를 들어서  mogandl이 dotenv 값에 따라서 바뀐다고 하면 아래 처럼 require 밑에 놔야 함
+// const dotenv = require("dotenv");
+// dotenv.config();
+// const morgan = require("morgan");
+
 const app = express();
 app.set("port", process.env.PORT || 3000);
 
@@ -17,7 +25,9 @@ app.use("/", express.static(path.join(__dirname, "public")));
 
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
-app.use(cookieParser(process.env.COOKIE_SECRET));
+app.use(cookieParser(process.env.COOKIE_SECRET));//서명
+//dotenv 를 통해서 키를 환경변수에 숨겨두고 사용함, 보안상 필요, 소스코드가 털려도 비밀키는 털리지 않을 수 있음
+
 app.use(
   session({
     //session : 개인의 저장공간을 만들어줌

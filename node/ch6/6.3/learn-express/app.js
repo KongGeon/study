@@ -28,8 +28,10 @@ app.use(session({
   name: 'session-cookie',
 }));
 
-app.use('/', indexRouter);
-app.use('/user', userRouter);
+app.use('/', indexRouter); //localhost:3000/
+app.use('/user', userRouter); //localhost:3000/user/
+//라우팅 분리 후 다시 합치는 셈, app.js가 길어지는것을 막을 수 있음
+
 
 app.use((req, res, next) => {
   res.status(404).send('Not Found');

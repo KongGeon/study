@@ -1,3 +1,4 @@
+
 const express = require('express');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
@@ -11,8 +12,14 @@ const userRouter = require('./routes/user');
 
 const app = express();
 app.set('port', process.env.PORT || 3000);
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'pug');
+
+//퍼그 세팅 시작, 위 아래 잘 보고 이 위체 놓으면 됨
+app.set('views', path.join(__dirname, 'views')); // views에 views 폴더를 지정, 실제로 만들어야 함
+app.set('view engine', 'pug'); //view engine 이 pug 라고 지정
+//pug 템플릿 엔진 : html의 단점을 개선
+//반복, 조건, 변수 등 사용 가능
+//동적페이지 작성 가능
+//php, jsp와 유사함
 
 app.use(morgan('dev'));
 app.use('/', express.static(path.join(__dirname, 'public')));
