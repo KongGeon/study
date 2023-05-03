@@ -14,7 +14,7 @@ router.route('/')
       next(err);
     }
   })
-  .post(async (req, res, next) => {
+  .post(async (req, res, next) => { //사용자등록
     try {
       const user = await User.create({
         name: req.body.name,

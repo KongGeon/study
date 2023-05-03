@@ -15,7 +15,7 @@ nunjucks.configure('views', {
   express: app,
   watch: true,
 });
-sequelize.sync({ force: false })
+sequelize.sync({ force: false }) //싱크되는 순간 알아서 모델들이 생성됨
   .then(() => {
     console.log('데이터베이스 연결 성공');
   })
