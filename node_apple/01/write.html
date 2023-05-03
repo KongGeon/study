@@ -46,7 +46,23 @@
       </div>
     </nav>
 
-    <h4>홈</h4>
+    <h4 class="container mt-4"><strong>글 작성페이지</strong></h4>
+
+    <div class="container mt-3">
+      <form action="/add" method="POST">
+        <!-- 꼭있어야하는 2개 속성 action, method-->
+        <div class="form-group">
+          <label>오늘의 할일</label>
+          <input type="text" class="form-control" name="tilte" />
+          <!-- name 꼭 써줘야함 -->
+        </div>
+        <div class="form-group">
+          <label>날짜</label>
+          <input type="text" class="form-control" name="date" />
+        </div>
+        <button type="submit" class="btn btn-outline-secondary">Submit</button>
+      </form>
+    </div>
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script
