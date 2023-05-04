@@ -123,5 +123,12 @@ MongoClient.connect(
           );
       })
 
+      app.put("/edit", function (요청, 응답) { //글수정
+        // db.collection("post").updateOne({_id: ??},{$set: {제목: ??, 날짜: ??}},function(에러,결과){})
+        //   $set == 업데이트해주세요~ 그런데 없으면 추가해주세여
+          db.collection("post").updateOne({ _id: 요청.body.id}, { $set: { 제목: ??, 날짜: ??} }, function (에러, 결과) {
+            
+        })
+    })
   }
 );
