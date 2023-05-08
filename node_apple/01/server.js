@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
-app.use(express.urlencoded({extended: true})); //body-parser 불러오기
+require('dotenv').config(); //env
+
+app.use(express.urlencoded({ extended: true })); //body-parser 불러오기
 
 app.set("view engine", "ejs"); //EJS 불러오기
 
@@ -19,14 +21,14 @@ app.use(passport.session());
 let db;
 const MongoClient = require("mongodb").MongoClient; // 몽고db 불러오기
 MongoClient.connect(
-  "mongodb+srv://admin:qwe1234@cluster0.ir2oe4d.mongodb.net/?retryWrites=true&w=majority",
+  process.env.DB_URL,
   function (에러, client) {
     //몽고db 접속되면
 
     if (에러) return console.log(에러);
     db = client.db("todoapp");
 
-    app.listen(8081, function () {
+    app.listen( process.env.PORT, function () {
       //8081 서버 열렸을때 함수실행
 
       console.log("8081");
@@ -152,6 +154,28 @@ MongoClient.connect(
       }
     );
 
+
+    app.get("/mypage", 로그인했니, function (요청, 응답) {
+      //마이페이지에 올때마다 로그인했니 함수를 실행시켜줌
+
+      //deserializeUser를 이용해서 요청.user를 가져올 수 있음
+      응답.render("mypage.ejs", { 사용자: 요청.user });
+      //사용자 정보를 mypage로 데이터 넘겨줌
+    });
+
+    function 로그인했니(요청, 응답, next) {
+      //마이페이지 로그인 여부 미들웨어
+      if (요청.user) {
+        //로그인한 상태라면 요청.user 가 늘 있음
+        next();
+      } else {
+        응답.send('로그인안하셨는데요?')
+      }
+    }
+
+
+
+
     //아이디 비번 인증 코드
     passport.use(
       new LocalStrategy(
@@ -162,6 +186,7 @@ MongoClient.connect(
           passReqToCallback: false,
         },
         function (입력한아이디, 입력한비번, done) {
+          //사용자 아이디 비번 검증하는 함수, 복붙 고고
           //console.log(입력한아이디, 입력한비번);
           db.collection("login").findOne(
             {id: 입력한아이디},
@@ -169,9 +194,12 @@ MongoClient.connect(
               if (에러) return done(에러);
 
               if (!결과)
+                //결과가 없을때
                 return done(null, false, {message: "존재하지않는 아이디요"});
               if (입력한비번 == 결과.pw) {
+                //근데 이렇게 하면 보안이 쓰레기임, 알아서 찾아서 해시함수든 뭐든 쓸것.
                 return done(null, 결과);
+                //done(서버에러, 성공시 사용자 DB데이터, 에러메시지)
               } else {
                 return done(null, false, {message: "비번틀렸어요"});
               }
@@ -180,5 +208,24 @@ MongoClient.connect(
         }
       )
     );
+
+    passport.serializeUser(function (user, done) {
+      // serializeUser: 세션을 저장시키는 코드
+      //로그인 성공시 발동
+      done(null, user.id)
+      //user.id 정보로 세션을 만듦
+    });
+    
+    passport.deserializeUser(function (아이디, done) {
+      //마이페이지 접속시 발동
+      db.collection('login').findOne({id:아이디}, function (에러, 결과) {
+        done(null, 결과)
+      })
+      
+    }); 
+
+
   }
 );
+
+
