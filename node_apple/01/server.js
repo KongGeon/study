@@ -11,6 +11,8 @@ app.use("/public", express.static("public")); //css나 그런 폴더 넣을때 �
 const methodOverride = require("method-override"); //PUT 요청하기 위한 라이브러리
 app.use(methodOverride("_method"));
 
+
+
 const passport = require("passport"); //세션을 이용한 회원가입
 const LocalStrategy = require("passport-local").Strategy;
 const session = require("express-session");
@@ -29,9 +31,9 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
   db = client.db("todoapp");
 
   app.listen(process.env.PORT, function () {
-    //8081 서버 열렸을때 함수실행
+    //8080 서버 열렸을때 함수실행
 
-    console.log("8081");
+    console.log("8080");
   });
 
   //get 요청
@@ -45,34 +47,33 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
   });
 
   //post 요쳥
+  //글쓰기
   app.post("/add", function (요청, 응답) {
     // db.collection('콜랙션').insertOne('저장할데이터(오브젝트형식)', function(에러,결과){}); //데이터 저장
-    let 총게시물개수;
+
     db.collection("counter").findOne(
       { name: "게시물개수" },
       function (에러, 결과) {
-        총게시물개수 = 결과.totalPost;
-
-        db.collection("post").insertOne(
-          {
-            _id: 총게시물개수 + 1,
-            제목: 요청.body.title,
-            날짜: 요청.body.date,
-          }, //id값 만들어줘야함, 컬랙션을 하나 더 만들어서 사용
-          function (에러, 결과) {
-            console.log("저장완료");
-            // db.collection('counter').updateOne({수정할데이터},{?? : {수정값}},function(){}) //id에 1더하기 // ?? == 오퍼레이터
-            db.collection("counter").updateOne(
-              { name: "게시물개수" },
-              { $inc: { totalPost: 1 } },
-              function (에러, 결과) {
-                // 업데이트**********
-                // $inc == 지금있는데이터에 추가로 증가시킴
-                if (에러) return console.log(에러);
-              }
-            );
-          }
-        );
+        let 총게시물개수 = 결과.totalPost;
+        let 저장할거 = {
+          _id: 총게시물개수 + 1, //id값 만들어줘야함, 컬랙션을 하나 더 만들어서 사용
+          제목: 요청.body.title,
+          날짜: 요청.body.date,
+          작성자: 요청.user._id, //유저 아이디, 못가져오면 더 어래줄로 내려서 시도, 보통 sql에서는 초소한으로 데이터를 넣어주는데 nosql은 자원낭비되니 여러가지를 다 넣는 것도 추천함
+        };
+        db.collection("post").insertOne(저장할거, function (에러, 결과) {
+          console.log("저장완료");
+          // db.collection('counter').updateOne({수정할데이터},{?? : {수정값}},function(){}) //id에 1더하기 // ?? == 오퍼레이터
+          db.collection("counter").updateOne(
+            { name: "게시물개수" },
+            { $inc: { totalPost: 1 } },
+            function (에러, 결과) {
+              // 업데이트**********
+              // $inc == 지금있는데이터에 추가로 증가시킴
+              if (에러) return console.log(에러);
+            }
+          );
+        });
       }
     );
 
@@ -119,10 +120,15 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
   // 삭제
   app.delete("/delete", function (요청, 응답) {
     요청.body._id = parseInt(요청.body._id); //자료형 안맞아서 변환, 타입스크립트랑 연동해보자
-    db.collection("post").deleteOne(요청.body, function (에러, 결과) {
+
+    let 삭제할데이터 = { _id: 요청.body._id, 작성자: 요청.user._id }; //2가지 조건을 맞춰줌
+
+    db.collection("post").deleteOne(삭제할데이터, function (에러, 결과) {
       //요청.body 이자리가 조건자리, 자료형 잘 맞춰줘야 삭제됨
       //delete 성공했을때 실행
-
+      if (결과) {
+        console.log(결과);
+      }
       응답.status(200).send({ message: "성공했어요" }); //참고용: 스테이터스 변경
       // 응답.send('<p>some html</p>') 참고용: 이런식으로 많음
       // 응답.status(404).send('Sorry, we cannot find that!')
@@ -168,9 +174,11 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
     );
   });
 
+  //로그인 페이지 랜더링
   app.get("/login", function (요청, 응답) {
     응답.render("login.ejs");
   });
+  //로그인 실행
   app.post(
     "/login",
     passport.authenticate("local", {
@@ -233,6 +241,46 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
     )
   );
 
+  //이미지 업로드 페이지
+  app.get("/upload", function (요청, 응답) {
+    응답.render("upload.ejs");
+  });
+  //이미지 업로드 기능
+  let multer = require("multer"); //이미지 업로드 라이브러리
+  let storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, "./public/image"); //이미지 업로드한 것을 어디로 보낼지 선택
+    },
+    filename: function (req, file, cb) {
+      cb(null, file.originalname); //파일명을 설정, 여기선 기존 이름으로 설정, 바꾸려면 file.originalname + '날짜' 이런식으로 적어놓으면 됨
+    },
+  });
+  let path = require('path');//node 기본 라이브러리중 하나
+  let upload = multer({
+    //이걸 미들웨어처럼 이용하면 됨
+    storage: storage,
+    fileFilter: function (req, file, callback) { //필터
+      let ext = path.extname(file.originalname);
+      if (ext !== ".png" && ext !== ".jpg" && ext !== ".jpeg") { //확장자 확인
+        return callback(new Error("PNG, JPG만 업로드하세요"));
+      }
+      callback(null, true);
+    },
+    limits: {
+      fileSize: 1024 * 1024,
+    },
+  });
+
+  app.post("/upload", upload.single("photo"), function (요청, 응답) {
+    //upload.single('가져올name') , 여러개 가져올 경우 upload.array('가져올name', 10(이건 받을 최대 개수)) input도 멀티플로 바꿔야함
+    응답.send("업로드완료");
+  });
+
+  //업로드한 이미지 확인
+  app.get('/image/:imageName', function(요청, 응답){
+    응답.sendFile( __dirname + '/public/image/' + 요청.params.imageName )
+  })
+
   passport.serializeUser(function (user, done) {
     // serializeUser: 세션을 저장시키는 코드
     //로그인 성공시 발동
@@ -246,4 +294,28 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
       done(null, 결과);
     });
   });
+
+  //회원가입 실행, 위의 passport 밑에 적어야 실행가능
+  app.post("/register", function (요청, 응답) {
+    //중복확인, 정규화, 비밀번호난수화(라이브러리 있나보자)
+    db.collection("login").insertOne(
+      { id: 요청.body.id, pw: 요청.body.pw },
+      function (에러, 결과) {
+        응답.redirect("/");
+      }
+    );
+  });
+
+  // router 분리 예제 > routes 폴더에 js 파일 하나 만듬
+  //   app.get('/shop/shirts', function(요청, 응답){
+  //     응답.send('셔츠 파는 페이지입니다.');
+  //  });
+
+  //  app.get('/shop/pants', function(요청, 응답){
+  //     응답.send('바지 파는 페이지입니다.');
+  //  });
+  // 위처럼 안쓰고 분리하려면
+  app.use("/shop", require("./routes/shop.js"));
+  //이런식으로 shop.js 파일을 불러옴, 미들웨어를 '/'로 적은 이유는 '/'경로로 요청했을때 불러옴 이제 뒤에 주소는 shop.js에 따름 ex) localhost:8081/shop/shirts
+  //앞에 shop이 붙는 이런식으로 폴더별로 나누면 좋아보임
 });
