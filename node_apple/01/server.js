@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 require("dotenv").config(); //env
 
-app.use(express.urlencoded({extended: true})); //body-parser 불러오기
+app.use(express.urlencoded({ extended: true })); //body-parser 불러오기
 
 app.set("view engine", "ejs"); //EJS 불러오기
 
@@ -14,9 +14,13 @@ app.use(methodOverride("_method"));
 const passport = require("passport"); //세션을 이용한 회원가입
 const LocalStrategy = require("passport-local").Strategy;
 const session = require("express-session");
-app.use(session({secret: "비밀코드", resave: true, saveUninitialized: false}));
+app.use(
+  session({ secret: "비밀코드", resave: true, saveUninitialized: false })
+);
 app.use(passport.initialize());
 app.use(passport.session());
+
+const { ObjectId } = require("mongodb"); //ObjectId로 바꿔줌
 
 let db;
 const MongoClient = require("mongodb").MongoClient; // 몽고db 불러오기
@@ -48,7 +52,7 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
     // db.collection('콜랙션').insertOne('저장할데이터(오브젝트형식)', function(에러,결과){}); //데이터 저장
     if (요청.user) {
       db.collection("counter").findOne(
-        {name: "게시물개수"},
+        { name: "게시물개수" },
         function (에러, 결과) {
           let 총게시물개수 = 결과.totalPost;
           let 저장할거 = {
@@ -61,8 +65,8 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
             console.log("저장완료");
             // db.collection('counter').updateOne({수정할데이터},{?? : {수정값}},function(){}) //id에 1더하기 // ?? == 오퍼레이터
             db.collection("counter").updateOne(
-              {name: "게시물개수"},
-              {$inc: {totalPost: 1}},
+              { name: "게시물개수" },
+              { $inc: { totalPost: 1 } },
               function (에러, 결과) {
                 // 업데이트**********
                 // $inc == 지금있는데이터에 추가로 증가시킴
@@ -85,7 +89,7 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
     db.collection("post")
       .find()
       .toArray(function (에러, 결과) {
-        응답.render("list.ejs", {posts: 결과});
+        응답.render("list.ejs", { posts: 결과 });
       });
   });
 
@@ -101,9 +105,9 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
           },
         },
       },
-      {$sort: {_id: 1}}, //정렬, 1, -1 로 오름 내림 선택 가능
+      { $sort: { _id: 1 } }, //정렬, 1, -1 로 오름 내림 선택 가능
       {
-        $project: {제목: 1, _id: 1, 날짜: 1, score: {$meta: "searchScore"}},
+        $project: { 제목: 1, _id: 1, 날짜: 1, score: { $meta: "searchScore" } },
       }, // 데이터 결과 나타내는 방법, 0이거나 안적으면 안가져오기 1이면 가져오기, 다 보여줄거면 없어도됨, score(검색어랑 결과랑 유사정도) 같은건 내가 정의 안한건데도 가져올 수 있음
     ];
     // get방식으로 들어간 내용은 요청.query 에 다 들어있음
@@ -112,7 +116,7 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
       // .find({ $text: { $search: 요청.query.value } }) // 몽고db 컬랙션 만들고 indexes 탭 들어가서 CREATE INDEX 클릭 , 필드 한줄만 남기고 내용 적기 ex {"제목": "text"} ==> 이렇게 했으면 이런식으로 조건 검색 가능, 하지만 띄어쓰기 단위로 검색되어서 한글 친화적이지 않음
       .aggregate(검색조건) // collections 탭 옆에 search 탭 클릭 > 그후에 뭐 이런거 하고 나서 할것, 검색조건 여러개 입력 가능, 한국어옵션을 넣어서 '입니다' '를' 이런거 없어도 검색 되도록 할 수 있음
       .toArray(function (에러, 결과) {
-        응답.render("search.ejs", {posts: 결과});
+        응답.render("search.ejs", { posts: 결과 });
       });
   });
 
@@ -120,7 +124,7 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
   app.delete("/delete", function (요청, 응답) {
     요청.body._id = parseInt(요청.body._id); //자료형 안맞아서 변환, 타입스크립트랑 연동해보자
 
-    let 삭제할데이터 = {_id: 요청.body._id, 작성자: 요청.user._id}; //2가지 조건을 맞춰줌
+    let 삭제할데이터 = { _id: 요청.body._id, 작성자: 요청.user._id }; //2가지 조건을 맞춰줌
 
     db.collection("post").deleteOne(삭제할데이터, function (에러, 결과) {
       //요청.body 이자리가 조건자리, 자료형 잘 맞춰줘야 삭제됨
@@ -128,7 +132,7 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
       if (결과) {
         console.log(결과);
       }
-      응답.status(200).send({message: "성공했어요"}); //참고용: 스테이터스 변경
+      응답.status(200).send({ message: "성공했어요" }); //참고용: 스테이터스 변경
       // 응답.send('<p>some html</p>') 참고용: 이런식으로 많음
       // 응답.status(404).send('Sorry, we cannot find that!')
       // 응답.sendFile('/uploads/logo.png')
@@ -141,10 +145,10 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
   app.get("/detail/:id", function (요청, 응답) {
     // : 뒤에 아무 파라미터가 들어가도 실행
     db.collection("post").findOne(
-      {_id: parseInt(요청.params.id)}, //요청.params.id 이런식으로 주소의 id를 가져옴, 자료형 잘 맞추고..
+      { _id: parseInt(요청.params.id) }, //요청.params.id 이런식으로 주소의 id를 가져옴, 자료형 잘 맞추고..
       function (에러, 결과) {
         console.log(결과);
-        응답.render("detail.ejs", {data: 결과});
+        응답.render("detail.ejs", { data: 결과 });
       }
     );
   });
@@ -152,10 +156,10 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
   app.get("/edit/:id", function (요청, 응답) {
     //글수정
     db.collection("post").findOne(
-      {_id: parseInt(요청.params.id)}, //요청.params.id 이런식으로 주소의 id를 가져옴, 자료형 잘 맞추고..
+      { _id: parseInt(요청.params.id) }, //요청.params.id 이런식으로 주소의 id를 가져옴, 자료형 잘 맞추고..
       function (에러, 결과) {
         console.log(결과);
-        응답.render("edit.ejs", {data: 결과});
+        응답.render("edit.ejs", { data: 결과 });
       }
     );
   });
@@ -165,38 +169,14 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
     // db.collection("post").updateOne({_id: ??},{$set: {제목: ??, 날짜: ??}},function(에러,결과){})
     //   $set == 업데이트해주세요~ 그런데 없으면 추가해주세여
     db.collection("post").updateOne(
-      {_id: parseInt(요청.body.id)},
-      {$set: {제목: 요청.body.title, 날짜: 요청.body.date}},
+      { _id: parseInt(요청.body.id) },
+      { $set: { 제목: 요청.body.title, 날짜: 요청.body.date } },
       function (에러, 결과) {
         응답.redirect("/list"); //응답은 필수
       }
     );
   });
 
-  // 채팅 추가
-  app.post("/chat", function (요청, 응답) {
-    console.log("body", 요청.body);
-    console.log("user", 요청.user);
-    let 저장할거 = {
-      number: [요청.body._id, 요청.user.id],
-      date: new Date(),
-      title: 요청.body,
-    };
-    db.collection("chatroom").insertOne(저장할거, function (에러, 결과) {
-      console.log("저장완료");
-    });
-  });
-  // 채팅방 페이지 이동
-  app.get("/chat", function (요청, 응답) {
-    console.log(요청.user);
-    db.collection("chat").findOne(
-      {number: parseInt(요청.user._id)},
-      function (에러, 결과) {
-        console.log(결과);
-        응답.render("chat.ejs", {data: 결과});
-      }
-    );
-  });
   //로그인 페이지 랜더링
   app.get("/login", function (요청, 응답) {
     응답.render("login.ejs");
@@ -217,7 +197,7 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
     //마이페이지에 올때마다 로그인했니 함수를 실행시켜줌
 
     //deserializeUser를 이용해서 요청.user를 가져올 수 있음
-    응답.render("mypage.ejs", {사용자: 요청.user});
+    응답.render("mypage.ejs", { 사용자: 요청.user });
     //사용자 정보를 mypage로 데이터 넘겨줌
   });
 
@@ -227,7 +207,7 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
       //로그인한 상태라면 요청.user 가 늘 있음
       next();
     } else {
-      응답.send("로그인안하셨는데요?");
+      console.log("로그인안했어여");
     }
   }
 
@@ -244,19 +224,19 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
         //사용자 아이디 비번 검증하는 함수, 복붙 고고
         //console.log(입력한아이디, 입력한비번);
         db.collection("login").findOne(
-          {id: 입력한아이디},
+          { id: 입력한아이디 },
           function (에러, 결과) {
             if (에러) return done(에러);
 
             if (!결과)
               //결과가 없을때
-              return done(null, false, {message: "존재하지않는 아이디요"});
+              return done(null, false, { message: "존재하지않는 아이디요" });
             if (입력한비번 == 결과.pw) {
               //근데 이렇게 하면 보안이 쓰레기임, 알아서 찾아서 해시함수든 뭐든 쓸것.
               return done(null, 결과);
               //done(서버에러, 성공시 사용자 DB데이터, 에러메시지)
             } else {
-              return done(null, false, {message: "비번틀렸어요"});
+              return done(null, false, { message: "비번틀렸어요" });
             }
           }
         );
@@ -315,7 +295,7 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
 
   passport.deserializeUser(function (아이디, done) {
     //마이페이지 접속시 발동
-    db.collection("login").findOne({id: 아이디}, function (에러, 결과) {
+    db.collection("login").findOne({ id: 아이디 }, function (에러, 결과) {
       done(null, 결과);
     });
   });
@@ -324,7 +304,7 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
   app.post("/register", function (요청, 응답) {
     //중복확인, 정규화, 비밀번호난수화(라이브러리 있나보자)
     db.collection("login").insertOne(
-      {id: 요청.body.id, pw: 요청.body.pw},
+      { id: 요청.body.id, pw: 요청.body.pw },
       function (에러, 결과) {
         응답.redirect("/");
       }
@@ -343,4 +323,61 @@ MongoClient.connect(process.env.DB_URL, function (에러, client) {
   app.use("/shop", require("./routes/shop.js"));
   //이런식으로 shop.js 파일을 불러옴, 미들웨어를 '/'로 적은 이유는 '/'경로로 요청했을때 불러옴 이제 뒤에 주소는 shop.js에 따름 ex) localhost:8081/shop/shirts
   //앞에 shop이 붙는 이런식으로 폴더별로 나누면 좋아보임
+
+  // 채팅 추가
+
+  app.post("/chatroom", 로그인했니, function (요청, 응답) {
+    console.log("user", 요청.user);
+    console.log("body", 요청.body);
+    let 저장할거 = {
+      member: [ObjectId(요청.body.당한사람id), 요청.user._id],
+      date: new Date(),
+      title: 요청.body.title,
+    };
+    db.collection("chatroom").insertOne(저장할거, function (에러, 결과) {
+      응답.send("성공");
+    });
+  });
+  // 채팅방 페이지 이동
+app.get('/chat', 로그인했니, function(요청, 응답){ 
+
+  db.collection('chatroom').find({ member : 요청.user._id }).toArray().then((결과)=>{
+    console.log(결과);
+    응답.render('chat.ejs', {data : 결과})
+  })
+
+}); 
+  //메시지 전송
+app.post('/message', 로그인했니, function(요청, 응답){
+  var 저장할거 = {
+    parent : 요청.body.parent, //채팅방 id
+    userid : 요청.user._id, //로그인된 유저 id
+    content : 요청.body.content,
+    date : new Date(),
+  }
+  db.collection('message').insertOne(저장할거)
+  .then((결과)=>{
+    응답.send(결과);
+  })
+}); 
+  
+  // 메시지 창구
+  app.get('/message/:parentid', 로그인했니, function(요청, 응답){
+
+    응답.writeHead(200, {
+      "Connection": "keep-alive",
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+    });
+  
+    db.collection('message').find({ parent: 요청.params.parentid }).toArray() //.params.parentid : 주소에 쓴거
+    .then((결과)=>{
+      console.log(결과);
+      응답.write('event: test\n'); //규칙, 이른이름으로 데이터를 전달하겠다.
+      응답.write(`data: ${JSON.stringify(결과)}\n\n`); //문자형태로만 전달가능, 배열을 json 형태의 문자로 변환
+    });
+  
+  });
+
+
 });
