@@ -343,7 +343,7 @@ app.get('/chat', 로그인했니, function(요청, 응답){
 
   db.collection('chatroom').find({ member : 요청.user._id }).toArray().then((결과)=>{
     console.log(결과);
-    응답.render('chat.ejs', {data : 결과})
+    응답.render('chat.ejs', { data: 결과, 사용자: 요청.user._id })
   })
 
 }); 
@@ -355,6 +355,7 @@ app.post('/message', 로그인했니, function(요청, 응답){
     content : 요청.body.content,
     date : new Date(),
   }
+
   db.collection('message').insertOne(저장할거)
   .then((결과)=>{
     응답.send(결과);
@@ -364,7 +365,7 @@ app.post('/message', 로그인했니, function(요청, 응답){
   // 메시지 창구
   app.get('/message/:parentid', 로그인했니, function(요청, 응답){
 
-    응답.writeHead(200, {
+    응답.writeHead(200, {//실시간 서버
       "Connection": "keep-alive",
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
@@ -377,6 +378,20 @@ app.post('/message', 로그인했니, function(요청, 응답){
       응답.write(`data: ${JSON.stringify(결과)}\n\n`); //문자형태로만 전달가능, 배열을 json 형태의 문자로 변환
     });
   
+
+    //change stream, 이부분없으면 db가 바뀌어도 새로고침 안해줌
+    const 찾을문서 = [
+      { $match: { 'fullDocument.parent': 요청.params.parentid } } //찾을 문서 조건, fullDocument 이거 꼭 붙여야함 안붙이면 큰일남
+  ];
+    
+  const changeStream = db.collection('message').watch(찾을문서); //watch() 붙이면 실시간 감시해줌
+  
+  changeStream.on('change', (result) => { //감시하다가 변동사항이 생기면 바로 아래 코드를 실행해줌
+    console.log(result.fullDocument);//추가된 도큐먼트 출력
+    응답.write('event: test\n'); //규칙, 이른이름으로 데이터를 전달하겠다.
+    응답.write(`data: ${JSON.stringify([result.fullDocument])}\n\n`); //db에 변동사항 생기면 응답해줌, 서버에서 도큐먼트 찾아서 보내면 대괄호에 넣어서 보내줌
+  });
+    //change stream 끝
   });
 
 
